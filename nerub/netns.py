@@ -16,7 +16,7 @@ IP_CMD_TIMEOUT = 5
 
 
 def create_veth(veth, eth, namespace, ip):
-    with NamedNamespace(namespace) as ns:
+    with NamedNamespace(Namespace(namespace)) as ns:
         ns.check_output(['ip', 'link', 'add', veth, 'link', eth, 'type', 'macvlan', 'mode', 'brige'])
         ns.check_output(['ip', 'addr', 'add', '%s/16' % ip, 'dev', veth])
         ns.check_output(['ip', 'link', 'set', veth, 'up'])
