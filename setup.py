@@ -18,7 +18,7 @@ ENTRY_POINTS = {
 INSTALL_REQUIRES = [
     'gunicorn',
     'netaddr',
-    'redis-py',
+    'redis',
     'more_itertools',
     'flask',
 ]
