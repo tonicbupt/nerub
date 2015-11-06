@@ -32,11 +32,18 @@ class IP(object):
             return None
         return pickle.loads(value)
 
+    @property
+    def network(self):
+        return Network.get(self.network_id)
+
     def release(self):
         rds.delete(self._ENDPOINT_KEY % self.endpoint_id)
         network = Network.get(self.network_id)
         if network:
             network.release_ip(self.ip)
+
+    def __str__(self):
+        return str(self.ip)
 
 
 class Network(object):

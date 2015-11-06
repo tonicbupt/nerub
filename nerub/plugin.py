@@ -7,6 +7,8 @@ import logging
 from flask import Flask, jsonify, request
 from netaddr import IPAddress
 from nerub.network import IP, Network
+from nerub.utils import random_veth
+from nerub.netns import create_veth
 
 
 hostname = socket.gethostname()
@@ -40,7 +42,7 @@ def create_network():
 
     ip_data = data['IPv4Data']
     if ip_data:
-        Network.create(network_id, ip_data['Pool'])
+        Network.create(network_id, ip_data[0]['Pool'])
 
     app.logger.debug('CreateNetwork response JSON=%s', '{}')
     return jsonify({})
@@ -57,11 +59,11 @@ def create_endpoint():
 
     app.logger.info('Creating endpoint %s', endpoint_id)
 
-    # Get the addresses to use from the request JSON.
+    # docker sent me 172.19.0.3/16 ...
     address_ip4 = interface.get('Address', None)
-    address_ip4 = address_ip4 and IPAddress(address_ip4) or None
+    if address_ip4 and '/' in address_ip4:
+        address_ip4 = IPAddress(address_ip4.split('/', 1)[0])
 
-    # Get the gateway from the data passed in during CreateNetwork
     network = Network.get(network_id)
 
     if not network:
@@ -82,43 +84,23 @@ def join():
     app.logger.debug('Join JSON=%s', data)
 
     endpoint_id = data['EndpointID']
+    sandbox_key = data['SandboxKey']
     app.logger.info('Joining endpoint %s', endpoint_id)
 
-    IP.get(endpoint_id)
+    ip = IP.get(endpoint_id)
+    veth = random_veth()
+    create_veth(veth, 'em1', sandbox_key, ip)
 
-    # TODO 不知道要怎么搞了, 先看看
+    resp = {
+        'InterfaceName': {
+            'SrcName': veth,
+            'DstPrefix': 'vnbe',
+        },
+        'Gateway': '',
+    }
 
-    # # The host interface name matches the name given when creating the endpoint
-    # # during CreateEndpoint
-    # host_interface_name = generate_cali_interface_name(IF_PREFIX, endpoint_id)
-
-    # # The temporary interface name is what gets passed to libnetwork.
-    # # Libnetwork renames the interface using the DstPrefix (e.g. cali0)
-    # temp_interface_name = generate_cali_interface_name('tmp', endpoint_id)
-
-    # try:
-    #     # Create the veth pair.
-    #     netns.create_veth(host_interface_name, temp_interface_name)
-
-    #     # Set the mac as libnetwork doesn't do this for us (even if we return
-    #     # it on the CreateNetwork)
-    #     netns.set_veth_mac(temp_interface_name, FIXED_MAC)
-    # except CalledProcessError as e:
-    #     # Failed to create or configure the veth, ensure veth is removed.
-    #     remove_veth(host_interface_name)
-    #     raise e
-
-    # return_json = {
-    #     'InterfaceName': {
-    #         'SrcName': temp_interface_name,
-    #         'DstPrefix': IF_PREFIX
-    #     },
-    #     'Gateway': '',  # Leave gateway empty to trigger auto-gateway behaviour
-    # }
-
-    # app.logger.debug('Join Response JSON=%s', return_json)
-    # return jsonify(return_json)
-    return jsonify({})
+    app.logger.debug('Join Response JSON=%s', resp)
+    return jsonify(resp)
 
 
 @app.route('/NetworkDriver.EndpointOperInfo', methods=['POST'])
@@ -175,11 +157,7 @@ def leave():
     endpoint_id = data['EndpointID']
     app.logger.info('Leaving endpoint %s', endpoint_id)
 
-    IP.get(endpoint_id)
-    # TODO 这里又不知道怎么做了
-    # 是说去掉这块网卡吧
-    # remove_veth(generate_cali_interface_name(IF_PREFIX, ep_id))
-
+    # macvlan的leave什么都不做
     app.logger.debug('Leave response JSON=%s', '{}')
     return jsonify({})
 
