@@ -8,6 +8,7 @@ Nerub
 用 Docker 跑:
 
 `docker pull tonic/nerub`
+
 `docker run -d --privileged --net=host -v /run/docker/plugins:/run/docker/plugins tonic/nerub`
 
 直接跑:
