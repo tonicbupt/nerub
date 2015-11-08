@@ -15,11 +15,10 @@ IP_CMD_TIMEOUT = 5
 """How long to wait (seconds) for IP commands to complete."""
 
 
-def create_veth(veth, eth, namespace, ip):
-    with NamedNamespace(Namespace(namespace)) as ns:
-        ns.check_output(['ip', 'link', 'add', veth, 'link', eth, 'type', 'macvlan', 'mode', 'brige'])
-        ns.check_output(['ip', 'addr', 'add', '%s/16' % ip, 'dev', veth])
-        ns.check_output(['ip', 'link', 'set', veth, 'up'])
+def create_veth(veth, eth, ip):
+    check_output(['ip', 'link', 'add', veth, 'link', eth, 'type', 'macvlan', 'mode', 'bridge'])
+    check_output(['ip', 'addr', 'add', '%s/16' % ip, 'dev', veth])
+    check_output(['ip', 'link', 'set', veth, 'up'])
 
 
 def add_ns_default_route(namespace, next_hop, veth_name_ns):

@@ -84,12 +84,11 @@ def join():
     app.logger.debug('Join JSON=%s', data)
 
     endpoint_id = data['EndpointID']
-    sandbox_key = data['SandboxKey']
     app.logger.info('Joining endpoint %s', endpoint_id)
 
     ip = IP.get(endpoint_id)
     veth = random_veth()
-    create_veth(veth, 'em1', sandbox_key, ip)
+    create_veth(veth, 'em1', ip)
 
     resp = {
         'InterfaceName': {
