@@ -1,12 +1,20 @@
 # coding: utf-8
 
+import os
 import pickle
 import more_itertools
 from netaddr import IPNetwork, IPAddress
 from redis import Redis
 
 
-rds = Redis()
+def _get_redis():
+    host = os.getenv('REDIS_HOST', 'localhost')
+    port = int(os.getenv('REDIS_PORT', '6379'))
+    db = int(os.getenv('REDIS_DB', '0'))
+    return Redis(host=host, port=port, db=db)
+
+
+rds = _get_redis()
 
 
 class IP(object):
